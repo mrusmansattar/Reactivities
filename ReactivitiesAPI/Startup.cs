@@ -1,18 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ApplicationClassLib.Activities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using PersistanceClassLib;
+using MediatR;
+using ApplicationClassLib.Core;
+using AutoMapper;
+using ReactivitiesAPI.Extensions;
 
 namespace ReactivitiesAPI
 {
@@ -30,21 +28,9 @@ namespace ReactivitiesAPI
         {
 
             services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ReactivitiesAPI", Version = "v1" });
-            });
-            services.AddDbContext<DBContext>(opt =>
-            {
-                opt.UseSqlite(_config.GetConnectionString("DefaultConnection"));
-            });
-            services.AddCors(opt=> 
-            {
-                opt.AddPolicy("CorsPolicy",policy=>
-                {
-                    policy.AllowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:3000");
-                });
-            });
+            // ApplicationServicesExtension is just a class to clean this method. 
+            // All services which required for the application shifted there in below method AddApplicationServices
+            services.AddApplicationServices(_config);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
