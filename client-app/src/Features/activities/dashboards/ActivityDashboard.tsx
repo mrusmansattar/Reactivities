@@ -1,47 +1,32 @@
 
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Grid } from "semantic-ui-react";
+import LoadingComponent from '../../../App/layout/loadingComponent';
 import { useStore } from '../../../App/stores/store';
-import ActivityDetails from "../details/ActivityDetails";
-import ActivityForm from "../form/ActivityForm";
 import ActivityList from "./ActivityList";
 
-// First Approach commented out
-// export default function ActivityDashboard(props:Props)
-// {
-//     return(
-//         <Grid>
-//             <Grid.Column width='10'>
-//             <List>
-//                 {props.activities.map(activity =>(
-//                 <List.Item key={activity.Id}>
-//                 {activity.title}
-//                 </List.Item>
-//                 ))}
-//         </List>
-//             </Grid.Column>
-//         </Grid>
-//     )
-// }
-
-
-
-//Second Approch to achieve same thing
 export default observer(function ActivityDashboard()
 {
     const {activityStore}=useStore();
-    const {selectedActivity, editMode}=activityStore;
+    const {loadingActivities, activityRegistry}=activityStore;
+
+    useEffect(()=>{
+      if(activityRegistry.size<=1) loadingActivities();
+    },[activityRegistry.size, loadingActivities])
+    
+    
+    
+    if(activityStore.loadingInitial) return <LoadingComponent content='Loading app'/>
+
+
     return(
         <Grid>
             <Grid.Column width='10'>
                 <ActivityList/>
             </Grid.Column>
             <Grid.Column width='6'>
-                {selectedActivity && !editMode &&
-                    <ActivityDetails/>}
-                {editMode &&
-                <ActivityForm/>}
+               <h3>Activity Filter</h3>
             </Grid.Column>
         </Grid>
     )

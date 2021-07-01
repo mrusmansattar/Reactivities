@@ -1,33 +1,38 @@
 
 
-import { useEffect, Fragment } from 'react';
+import { Fragment } from 'react';
 import { Container } from 'semantic-ui-react';
 import NavBar from './navBar';
 import ActivityDashboard from '../../Features/activities/dashboards/ActivityDashboard';
-import LoadingComponent from './loadingComponent';
-import { useStore } from '../stores/store';
 import { observer } from 'mobx-react-lite';
+import { Route, useLocation } from 'react-router-dom';
+import HomePage from '../../Features/Home/HomePage';
+import ActivityForm from '../../Features/activities/form/ActivityForm';
+import ActivityDetails from '../../Features/activities/details/ActivityDetails';
 
 
 function App() {
 
-  const {activityStore}=useStore();
+  const location=useLocation();
 
-
-useEffect(()=>{
-  activityStore.loadingActivities();
-},[activityStore])
-
-
-
-if(activityStore.loadingInitial) return <LoadingComponent content='Loading app'/>
-// Fragment element or Div used when we returning more than one object like Navbar or Container, if we have single object, we can use that object directly without placing in div or Fragment
+// Fragment element or Div used when we returning more than one object like Navbar or Container,
+// We can place <> which also means div or segment
+// if we have single object, we can use that object directly without placing in div or Fragment
   return (
-     <Fragment>  
-        <NavBar />
-        <Container style={{marginTop:'7em'}}>
-          <ActivityDashboard />
-        </Container>
+     <Fragment> 
+       <Route exact path='/' component={HomePage} />
+       <Route path={'/(.+)'}
+        render={()=>(
+          <>
+            <NavBar />
+            <Container style={{marginTop:'7em'}}>
+              <Route path='/activities' component={ActivityDashboard} exact />
+              <Route path='/activities/:id' component={ActivityDetails} />
+              <Route key={location.key} path={['/CreateActivity', '/manage/:id']} component={ActivityForm} />
+            </Container>
+          </> 
+        )}
+       />
     </Fragment>
   );
 }

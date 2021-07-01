@@ -2,7 +2,7 @@
 import {makeAutoObservable, runInAction} from "mobx";
 import agent from "../api/agent";
 import { Activity } from "../models/activity";
-import { v4 as uuid } from "uuid";
+
 
 export default class ActivityStore{
 
@@ -17,11 +17,11 @@ export default class ActivityStore{
     }
 
     loadingActivities= async()=>{
+       this.loadingInitial=true;
         try{
             const activities= await agent.Activities.list();
                 activities.forEach(activity=>{
-                    activity.date=activity.date.split('T')[0];
-                    this.activityRegistry.set(activity.id, activity);
+                    this.setActivity(activity);
                     //this.activities.push(activity); 
                   })
                   this.setLoadingInitials(false);
@@ -34,6 +34,37 @@ export default class ActivityStore{
         }
     }
 
+    loadActivity=async(id:string)=>{
+        let activity= this.getActivity(id);
+        if(activity){
+            this.selectedActivity=activity;
+            return activity;
+        }
+        else{
+            this.setLoadingInitials(true);
+            try {
+                activity=await agent.Activities.details(id);
+                this.setActivity(activity);
+                runInAction(()=>{
+                    this.selectedActivity=activity;
+                })
+                this.setLoadingInitials(false);
+                return activity;
+            } 
+            catch (error) {
+                console.log(error);
+                this.setLoadingInitials(false);
+            }
+        }
+    }
+
+    private setActivity= (activity: Activity) => {
+        activity.date=activity.date.split('T')[0];
+        this.activityRegistry.set(activity.id, activity);
+    }
+    private getActivity=(id:string)=>{
+        return this.activityRegistry.get(id);
+    }
     get activitiesByDate(){
         return Array.from(this.activityRegistry.values()).sort((a,b)=>
             Date.parse(a.date)-Date.parse(b.date));
@@ -42,26 +73,25 @@ export default class ActivityStore{
     setLoadingInitials=(state:boolean) => {
         this.loadingInitial=state;
     }
+// Due to routing, we dont need these functions
+    // selectActivity=(id:string)=>{
+    //     this.selectedActivity= this.activityRegistry.get(id);
+    // }
+    // cancelSelectedActivity=()=>{
+    //     this.selectedActivity=undefined;
+    // }
 
-    selectActivity=(id:string)=>{
-        this.selectedActivity= this.activityRegistry.get(id);
-    }
-    cancelSelectedActivity=()=>{
-        this.selectedActivity=undefined;
-    }
+    // openForm=(id?:string)=>{
+    //     id ? this.selectActivity(id) : this.cancelSelectedActivity();
+    //     this.editMode=true;
+    // }
 
-    openForm=(id?:string)=>{
-        id ? this.selectActivity(id) : this.cancelSelectedActivity();
-        this.editMode=true;
-    }
-
-    closeForm=()=>{
-        this.editMode=false;
-    }
+    // closeForm=()=>{
+    //     this.editMode=false;
+    // }
 
     createActivity= async (activity: Activity)=>{
         this.loading=true;
-        activity.id=uuid();
         try {
             await agent.Activities.create(activity);
             runInAction(()=>{
@@ -84,10 +114,6 @@ export default class ActivityStore{
         try {
             await agent.Activities.update(activity);
             runInAction(()=>{
-                // this.activities.filter(a=>a.id !== activity.id);
-                // this.activities.push(activity);
-                // Second way is below line then we dont need to push "this.activities.push(activity);"
-                //this.activities= [...this.activities.filter(a=>a.id !== activity.id),activity];
                 this.activityRegistry.set(activity.id,activity);
                 this.selectedActivity=activity;
                 this.editMode=false;
@@ -108,7 +134,6 @@ export default class ActivityStore{
             await agent.Activities.delete(id);
             runInAction(()=>{
                this.activityRegistry.delete(id);
-                if(this.selectedActivity?.id===id) this.cancelSelectedActivity();
                 this.loading=false;
             })
         } catch (error) {
